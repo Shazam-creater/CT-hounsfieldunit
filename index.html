@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CT HU">
+  <meta name="description" content="CT Hounsfield Unit лавлагаа — дүрс оношилгооны эмч нарт">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>CT · HU Reference</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy:   #0f172a;
+      --navy2:  #1e293b;
+      --navy3:  #334155;
+      --accent: #3b82f6;
+      --purple: #7c3aed;
+      --bg:     #f1f5f9;
+      --surface:#ffffff;
+      --border: #e2e8f0;
+      --text:   #0f172a;
+      --muted:  #64748b;
+      --faint:  #94a3b8;
+      --sidebar-w: 220px;
+      --topbar-h:  56px;
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: 'IBM Plex Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      overflow: hidden;
+      height: 100dvh;
+    }
+
+    /* ── SIDEBAR (desktop) ───────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      height: 100dvh;
+      position: relative;
+      z-index: 50;
+    }
+    .logo-area {
+      padding: 20px 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      flex-shrink: 0;
+    }
+    .logo-eyebrow { font-size: 9.5px; font-weight: 600; letter-spacing: .12em;
+      text-transform: uppercase; color: #475569; margin-bottom: 4px; }
+    .logo-title { font-size: 18px; font-weight: 700; color: #f1f5f9; letter-spacing: -.02em; }
+    .logo-mono  { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #475569; margin-top: 2px; }
+
+    .sidebar-nav {
+      flex: 1; overflow-y: auto; padding: 8px 6px; display: flex;
+      flex-direction: column; gap: 1px;
+      scrollbar-width: thin; scrollbar-color: #334155 transparent;
+    }
+    .nav-btn {
+      display: flex; align-items: center; gap: 9px; padding: 9px 10px;
+      border: none; background: transparent; color: #64748b;
+      border-radius: 7px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 13px; font-weight: 500; text-align: left; transition: all .13s; width: 100%;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,.06); color: #cbd5e1; }
+    .nav-btn.active { background: rgba(59,130,246,.18); color: #93c5fd; }
+    .nav-icon { font-size: 14px; width: 20px; text-align: center; flex-shrink: 0; }
+    .nav-count {
+      margin-left: auto; font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+      background: rgba(255,255,255,.05); color: #475569; padding: 1px 6px; border-radius: 20px;
+    }
+    .nav-btn.active .nav-count { background: rgba(59,130,246,.2); color: #60a5fa; }
+
+    .sidebar-footer {
+      padding: 12px 14px calc(12px + var(--safe-bottom));
+      border-top: 1px solid rgba(255,255,255,.06);
+      font-size: 10.5px; color: #334155;
+      font-family: 'IBM Plex Mono', monospace; line-height: 1.7; flex-shrink: 0;
+    }
+
+    /* ── INSTALL BANNER ──────────────── */
+    #installBanner {
+      display: none; align-items: center; gap: 10px;
+      background: linear-gradient(135deg,#1d4ed8,#7c3aed);
+      color: white; padding: 10px 14px; font-size: 12.5px;
+      border-top: 1px solid rgba(255,255,255,.1); flex-shrink: 0;
+    }
+    #installBanner span { flex: 1; font-weight: 500; }
+    #installBanner button {
+      background: white; color: #1d4ed8; border: none; border-radius: 6px;
+      padding: 5px 12px; font-weight: 700; font-size: 12px;
+      cursor: pointer; white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif;
+    }
+    #installBanner .close-btn {
+      background: transparent; color: rgba(255,255,255,.6); border: none;
+      font-size: 16px; cursor: pointer; padding: 0 2px; line-height: 1;
+    }
+
+    /* ── OFFLINE BADGE ───────────────── */
+    #offlineBadge {
+      display: none; position: fixed; bottom: calc(16px + var(--safe-bottom));
+      left: 50%; transform: translateX(-50%); z-index: 999;
+      background: #1e293b; color: #93c5fd; border: 1px solid #334155;
+      padding: 6px 14px; border-radius: 20px; font-size: 12px;
+      font-family: 'IBM Plex Mono', monospace; box-shadow: 0 4px 14px rgba(0,0,0,.3);
+    }
+
+    /* ── MAIN ────────────────────────── */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100dvh; }
+
+    .topbar {
+      height: var(--topbar-h); background: var(--surface);
+      border-bottom: 1px solid var(--border); display: flex; align-items: center;
+      padding: 0 16px; gap: 10px; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    /* hamburger — mobile only */
+    .hamburger {
+      display: none; border: none; background: transparent; cursor: pointer;
+      font-size: 20px; padding: 4px; color: var(--muted); flex-shrink: 0;
+    }
+    .search-wrap { flex: 1; position: relative; }
+    .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      font-size: 13px; pointer-events: none; }
+    .search-input {
+      width: 100%; height: 34px; padding: 0 10px 0 32px;
+      border: 1.5px solid var(--border); border-radius: 8px;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 13px;
+      background: var(--bg); color: var(--text); outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    .search-input:focus { border-color: var(--accent); background: white; }
+    .search-input::placeholder { color: var(--faint); }
+
+    .ct-toggle {
+      display: flex; background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 3px; gap: 2px; flex-shrink: 0;
+    }
+    .ct-btn {
+      padding: 5px 12px; border-radius: 5px; border: none; cursor: pointer;
+      font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; font-weight: 600;
+      transition: all .14s; color: var(--muted); background: transparent; white-space: nowrap;
+    }
+    .ct-btn.on-non { background: var(--accent); color: white; box-shadow: 0 2px 8px rgba(59,130,246,.35); }
+    .ct-btn.on-con { background: var(--purple); color: white; box-shadow: 0 2px 8px rgba(124,58,237,.35); }
+
+    /* ── CONTENT AREA ────────────────── */
+    .content { flex: 1; overflow-y: auto; padding: 18px 18px calc(18px + var(--safe-bottom));
+      scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; animation: fadeUp .2s ease; }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+
+    .panel-head { margin-bottom: 14px; }
+    .panel-title { font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+    .panel-sub   { font-size: 12px; color: var(--faint); margin-top: 2px;
+      font-family: 'IBM Plex Mono', monospace; }
+
+    /* ── TABLE ───────────────────────── */
+    .table-card {
+      background: white; border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f8fafc; border-bottom: 2px solid var(--border); }
+    th {
+      padding: 9px 13px; font-size: 10px; font-weight: 700;
+      letter-spacing: .07em; text-transform: uppercase; color: var(--faint); text-align: left;
+    }
+    th.th-num { text-align: center; width: 40px; }
+    th.th-hu  { text-align: center; width: 160px; }
+    th.th-desc { width: 40%; }
+
+    tbody tr { border-bottom: 1px solid #f1f5f9; transition: background .09s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr.row-hidden { display: none; }
+
+    td { padding: 10px 13px; font-size: 13px; vertical-align: middle; }
+    td.td-num { text-align: center; color: var(--faint);
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; }
+    .name-main { font-weight: 600; }
+    .name-sub  { font-size: 11px; color: var(--faint); font-style: italic; margin-top: 1px; }
+    td.td-hu { text-align: center; }
+
+    .hu-badge {
+      display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+      font-weight: 600; padding: 3px 10px; border-radius: 5px;
+      color: white; white-space: nowrap;
+    }
+    .hu-scale { margin-top: 4px; height: 3px; background: #e2e8f0;
+      border-radius: 2px; position: relative; overflow: hidden; }
+    .hu-bar { height: 100%; position: absolute; left: 0; border-radius: 2px; opacity: .5; }
+    .desc-cell { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+    .no-results {
+      text-align: center; padding: 36px; color: var(--faint); font-size: 13px; display: none;
+    }
+    .no-results .nr-icon { font-size: 26px; margin-bottom: 8px; }
+
+    /* ── MOBILE OVERLAY SIDEBAR ──────── */
+    .sidebar-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 150; backdrop-filter: blur(2px);
+    }
+    .sidebar-overlay.open { display: block; }
+
+    /* ── MOBILE BOTTOM NAV ───────────── */
+    .bottom-nav {
+      display: none; background: var(--navy); border-top: 1px solid rgba(255,255,255,.08);
+      padding: 6px 0 calc(6px + var(--safe-bottom));
+      flex-shrink: 0; overflow-x: auto; scrollbar-width: none;
+    }
+    .bottom-nav::-webkit-scrollbar { display: none; }
+    .bottom-nav-inner { display: flex; gap: 2px; padding: 0 6px; min-width: max-content; }
+    .bnav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 5px 12px; border: none; background: transparent; cursor: pointer;
+      border-radius: 8px; transition: all .13s; min-width: 60px;
+    }
+    .bnav-btn.active { background: rgba(59,130,246,.18); }
+    .bnav-icon { font-size: 17px; }
+    .bnav-label { font-size: 9.5px; font-weight: 600; color: #475569;
+      white-space: nowrap; font-family: 'IBM Plex Sans', sans-serif; }
+    .bnav-btn.active .bnav-label { color: #93c5fd; }
+
+    /* ── RESPONSIVE ──────────────────── */
+    @media (max-width: 700px) {
+      body { flex-direction: column; }
+      .sidebar { display: none; }
+      .sidebar.mobile-open {
+        display: flex; position: fixed; left: 0; top: 0; bottom: 0;
+        z-index: 160; width: 260px; box-shadow: 4px 0 24px rgba(0,0,0,.4);
+      }
+      .hamburger { display: flex; }
+      .bottom-nav { display: block; }
+      .ct-btn { padding: 5px 8px; font-size: 11px; }
+      .content { padding: 12px 12px calc(12px + var(--safe-bottom)); }
+      th.th-desc { display: none; }
+      td.desc-cell { display: none; }
+      .panel-title { font-size: 17px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+  <div class="logo-area">
+    <div class="logo-eyebrow">Дүрс оношилгоо</div>
+    <div class="logo-title">CT · HU Reference</div>
+    <div class="logo-mono">Hounsfield Unit лавлагаа</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+  <div id="installBanner">
+    <span>📱 Утсандаа суулгах</span>
+    <button id="installBtn">Суулгах</button>
+    <button class="close-btn" onclick="document.getElementById('installBanner').style.display='none'">✕</button>
+  </div>
+  <div class="sidebar-footer">
+    HU = (μ − μ<sub>water</sub>) / μ<sub>water</sub> × 1000<br>
+    Агаар −1000 · Ус 0 · Яс 700+<br>
+    <span style="color:#1e40af;font-size:9.5px">● Офлайн ажилладаг</span>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Цэс">☰</button>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" type="text"
+             placeholder="Эд эрхтэн, HU, тайлбар хайх…" autocomplete="off">
+    </div>
+    <div class="ct-toggle">
+      <button class="ct-btn on-non" id="btnNon" onclick="setContrast(false)">Non-C</button>
+      <button class="ct-btn"        id="btnCon" onclick="setContrast(true)">+Contrast</button>
+    </div>
+  </header>
+
+  <div class="content" id="contentArea"></div>
+
+  <!-- Mobile bottom nav -->
+  <nav class="bottom-nav"><div class="bottom-nav-inner" id="bottomNav"></div></nav>
+</div>
+
+<!-- Offline indicator -->
+<div id="offlineBadge">📡 Офлайн горим</div>
+
+<script>
+// ════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════
+const TABS = [
+  {
+    id:'normal', icon:'⬡', label:'Ерөнхий',
+    sub:'Бүх хэсэгт хамаарах ерөнхий нягтын утгууд',
+    rows:[
+      { name:'Агаар', en:'Air',
+        non:'-1000', con:'-1000',
+        desc:'Hounsfield хуваарийн доод лавлагааны цэг. Уушиг, гэдэсний хий, гаднах агаарт хэмжигддэг.' },
+      { name:'Ус', en:'Water',
+        non:'0', con:'0',
+        desc:'CT калибрацийн стандарт цэг. Шингэн болон кист, шингэнтэй хөндийг үнэлэхэд ашигладаг.' },
+      { name:'Өөх тос', en:'Fat',
+        non:'-120~-60', con:'-120~-60',
+        desc:'Subcutaneous болон visceral өөхний нягт. Lipoma, teratoma, adrenal myelolipoma зэрэгт ашиглана.' },
+      { name:'Булчин', en:'Skeletal muscle',
+        non:'35~55', con:'50~70',
+        desc:'Хэвийн зөөлөн булчингийн нягт. Contrast хийснийх цусан хангамжийн дагуу нягт нэмэгдэнэ. Атрофид нягт буурна.' },
+      { name:'Яс — кортикал', en:'Cortical bone',
+        non:'700~3000', con:'700~3000',
+        desc:'Ясны гаднах хатуу компакт давхарга. Хугарал, шохойжилт, неоплазм оношлоход үндэслэл болно.' },
+      { name:'Яс — трабекуляр / губ', en:'Trabecular / Spongy bone',
+        non:'100~400', con:'100~400',
+        desc:'Ясны дотоод сүлжмэл бүтэц. Остеопороз, infiltrative процесст нягт буурна.' },
+      { name:'Судас (цус урсаж байх үед)', en:'Flowing blood in vessel',
+        non:'30~45', con:'150~350',
+        desc:'Судаснаа урсаж буй цусны нягт. Contrast-д иодын улмаас хурдан, эрс өсдөг.' },
+      { name:'Арьс', en:'Skin',
+        non:'30~60', con:'40~70',
+        desc:'Subcutaneous гематом, хавдрын нэвчдэс, шарх зэрэгт нягт өөрчлөгдөнө.' },
+      { name:'Металл / Протез', en:'Metal / Implant',
+        non:'1000+', con:'1000+',
+        desc:'Хиймэл үе, stent, шүдний бэхэлгээ. Beam hardening + streak артефакт үүсгэдэг.' },
+    ]
+  },
+  {
+    id:'tolgoi', icon:'🧠', label:'Толгой',
+    sub:'Тархи болон нүдний хэсгийн CT нягтын утгууд',
+    rows:[
+      { name:'Цагаан бодис', en:'White matter',
+        non:'20~30', con:'35~45',
+        desc:'Миелинтэй аксоны багцуудаас бүрдэнэ. Бор бодисоос бага нягттай — CT-д арай харанхуй. Демиелинизацид (MS) нягт бүр буурна.' },
+      { name:'Бор бодис', en:'Gray matter',
+        non:'32~40', con:'45~60',
+        desc:'Нейроны биеүдийн төвлөрсөн хэсэг — кортекс, базальт ганглий, таламус. Цагаан бодисоос арай нягт, арай цайвар.' },
+      { name:'Тархи нугасны шингэн (CSF)', en:'Cerebrospinal fluid',
+        non:'0~15', con:'0~15',
+        desc:'Усны нягттай ойролцоо — CT-д хар. Цус нийлэхэд (SAH) нягт >25 HU болж цагаан харагдана.' },
+      { name:'Нүдний линз', en:'Ocular lens',
+        non:'100~120', con:'100~120',
+        desc:'Катарактад нягт тэгш бус болж буурна. Гэмтэл, цахилгаан цохилтод нягт огцом буурна.' },
+      { name:'Нүдний шилэн бие', en:'Vitreous humor',
+        non:'0~10', con:'0~10',
+        desc:'Нүдний дотоод гелийн шингэн — усны нягттай ойролцоо. Цус нийлэхэд (vitreous hemorrhage) нягт нэмэгдэнэ.' },
+      { name:'Цочмог цус харвалт', en:'Acute intracranial hemorrhage',
+        non:'50~80', con:'50~80',
+        desc:'Гемоглобин + фибрины нягтаас болж усаас эрс өндөр. 0–72 цагт hyperdense (цагаан). Non-contrast CT-д оношлоход хангалттай.' },
+      { name:'Тархины хаван', en:'Cerebral edema',
+        non:'10~22', con:'10~22',
+        desc:'Эсийн гадна шингэн хуримтлагдснаас нягт буурна. Цагаан бодисын утгаас (<20 HU) бага бол вазогеник/цитотоксик хаваныг сануулна.' },
+      { name:'Шохойжилт (тархи)', en:'Intracranial calcification',
+        non:'80~300+', con:'80~300+',
+        desc:'Физиологийн: pineal, choroid plexus. Эмгэгийн: oligodendroglioma, TB, цистицерк, гипопаратиреоз.' },
+      { name:'Хоролд судасны сүлжээ', en:'Choroid plexus',
+        non:'40~60', con:'80~130',
+        desc:'CSF үйлдвэрлэдэг бүтэц. Цус-тархины бариерын гадна учир contrast маш сайн шингэнэ — хэвийн.' },
+      { name:'Тархины хавдар', en:'Brain tumor (дундаж)',
+        non:'20~45', con:'40~80',
+        desc:'GBM: ring enhancement. Meningioma: изо/гипердэнс, сайн будагдана. Low-grade glioma: гиподэнс.' },
+    ]
+  },
+  {
+    id:'huzuu', icon:'🩺', label:'Хүзүү',
+    sub:'Хүзүүний эрхтэн, булчин, булчирхай, судасны нягт',
+    rows:[
+      { name:'Булчин', en:'Neck muscles',
+        non:'40~60', con:'60~80',
+        desc:'SCM, стернохиоид, скаленус. Хорт хавдрын нэвчдэс, абсцесс, гематомыг булчинтай харьцуулж үнэлнэ.' },
+      { name:'Өөхөн эд', en:'Cervical fat',
+        non:'-120~-60', con:'-120~-60',
+        desc:'Фасцийн давхарга болон орон зайн хооронд байрлана. Үрэвсэл, хавдарт "fat stranding" (нягт нэмэгдэнэ).' },
+      { name:'Бамбай булчирхай', en:'Thyroid gland',
+        non:'80~100', con:'150~250',
+        desc:'Иодын өндөр агуулгаас болж non-contrast-д аяндаа нягт өндөр. Thyroiditis, хавдарт нягт алагдана. Contrast-д маш сайн будагддаг.' },
+      { name:'Мөгөөрс (тооросоогүй)', en:'Laryngeal cartilage, non-calcified',
+        non:'60~100', con:'60~100',
+        desc:'Залуу насанд зөөлөн мөгөөрс. Thyroid, cricoid, arytenoid мөгөөрснүүд. Хавдрын нэвчдэст нягт тэгш бус болно.' },
+      { name:'Мөгөөрс (тоорсон)', en:'Calcified cartilage',
+        non:'200~400+', con:'200~400+',
+        desc:'Хөгшрөлтийн үед кальцижна — хэвийн. Хавдрын нэвчдэсийг хэвийн шохойжилтоос ялгахад чухал.' },
+      { name:'Тунгалгийн зангилаа', en:'Cervical lymph node',
+        non:'20~40', con:'50~80',
+        desc:'Хэвийн ≤10мм, жигд нягт. Metastasis-д томорч, дотор нь necrotik хэсэг (-10~20 HU) харагдана.' },
+      { name:'Шүлсний булчирхай', en:'Salivary glands',
+        non:'30~50', con:'60~90',
+        desc:'Паротид өөхлөгт учир бага нягт. Calculus >100 HU. Contrast-д дундын нэмэгдэлт.' },
+    ]
+  },
+  {
+    id:'tseej', icon:'🫁', label:'Цээж',
+    sub:'Уушиг, плевр болон медиастиний нягтын утгууд',
+    rows:[
+      { name:'Уушигны паренхим (хэвийн)', en:'Normal lung parenchyma',
+        non:'-700~-600', con:'-700~-600',
+        desc:'Цулцангийн агаар + судасны эдийн хольц. Window: lung window (W:1500 / L:−600).' },
+      { name:'Амьсгал авсан үед', en:'Inspiration',
+        non:'-800~-900', con:'-800~-900',
+        desc:'Уушиг тэлснээр агаарын хувь нэмэгдэж нягт буурна. CT цээжийг стандартаар inspiration-д хийдэг.' },
+      { name:'Амьсгал гаргасан үед', en:'Expiration',
+        non:'-500~-700', con:'-500~-700',
+        desc:'Air trapping үнэлэхэд expiration CT ашигладаг. Нөлөөлсөн хэсэг нягт бага хэвээр үлдэнэ.' },
+      { name:'Ground-Glass Opacity (GGO)', en:'Ground-glass opacity',
+        non:'-600~-200', con:'-600~-200',
+        desc:'Судас тод харагдаж байх үед цайвар болсон хэсэг. COVID-19, UIP, HP, эмийн гаж нөлөөд харагдана.' },
+      { name:'Consolidation', en:'Alveolar consolidation',
+        non:'-100~50', con:'-100~50',
+        desc:'Цулцан шингэн/хатуу бодисоор дүүрсэн. Bacteria пневмони, ARDS, цус харвалт, хавдарт. Air bronchogram тод.' },
+      { name:'Emphysema', en:'Pulmonary emphysema',
+        non:'<-950', con:'<-950',
+        desc:'Цулцангийн хана эвдэрсэн. Threshold −950 HU. Centri-, para-, panlobular гэж ангилна.' },
+      { name:'Solid Nodule (хатгаа)', en:'Solid pulmonary nodule',
+        non:'20~80', con:'20~80',
+        desc:'≥6мм бол Fleischner guideline-ийн дагуу хянах. Гранулома, карцинома, metastasis.' },
+      { name:'Уушигны хорт хавдар', en:'Lung cancer',
+        non:'20~70', con:'30~90',
+        desc:'Adenocarcinoma, squamous, SCLC. Contrast нэмэгдэлт — васкулярчлал. Spiculated хил типик.' },
+      { name:'Плевр (бүрхүүл)', en:'Pleura',
+        non:'40~80', con:'60~100',
+        desc:'Хэвийн <2мм, CT-д бараг харагддаггүй. Плеврит, мезотелиомад зузаарч будагдана.' },
+      { name:'Уушигны артери', en:'Pulmonary artery (CTPA)',
+        non:'25~45', con:'200~350',
+        desc:'CTPA-д ≥180 HU тод харагдах ёстой. PE — filling defect. Болус timing маш чухал.' },
+      { name:'Плевр шингэн — транссудат', en:'Pleural effusion, transudate',
+        non:'0~20', con:'0~20',
+        desc:'Зүрхний дутмагшил, цирроз, нефрозт үүснэ. Уургийн агуулга бага, усны нягттай ойролцоо.' },
+      { name:'Плевр шингэн — экссудат', en:'Pleural effusion, exudate',
+        non:'20~40', con:'20~40',
+        desc:'Үрэвсэл, хавдар, TB-д үүснэ. Уургийн агуулга өндөр тул транссудатаас нягт их.' },
+      { name:'Гемоторакс', en:'Hemothorax',
+        non:'35~80', con:'35~80',
+        desc:'Цус хуримтлагдана — гемоглобины нягтаас болж транссудатаас өндөр.' },
+      { name:'Перикардын шингэн', en:'Pericardial effusion',
+        non:'0~20', con:'0~20',
+        desc:'50мл+ бол патологи. Гной >30 HU, цус >50 HU. Tamponade-д зүрхний хэлбэр өөрчлөгдөнө.' },
+    ]
+  },
+  {
+    id:'hevlii', icon:'🫃', label:'Хэвлий',
+    sub:'Хэвлийн дотоод эрхтнүүдийн CT нягтын утгууд',
+    rows:[
+      { name:'Элэг', en:'Liver',
+        non:'50~70', con:'100~180',
+        desc:'Non-contrast-д дэлүүнээс нягт их (ялгаа ≥10 HU). Артерийн (20–30с) + портал (60–70с) + equilibrium (180с+) гурвалсан фаз.' },
+      { name:'Дэлүү', en:'Spleen',
+        non:'40~60', con:'80~120',
+        desc:'Non-contrast-д элгээс бага нягт. Артерийн фазад "zebra pattern" — хэвийн. Инфаркт: wedge-хэлбэрийн гиподэнс.' },
+      { name:'Нойр булчирхай', en:'Pancreas',
+        non:'30~50', con:'80~120',
+        desc:'Цочмог панкреатит: некроз contrast-д будагдахгүй (<30 HU). CT severity index (Balthazar) ашигладаг.' },
+      { name:'Бөөрний кортекс', en:'Renal cortex',
+        non:'30~50', con:'150~250',
+        desc:'Нефрографийн фазад (80–120с) маш өндөр нягт. Ишемид будагдахгүй хэсэг.' },
+      { name:'Бөөрний медулла', en:'Renal medulla',
+        non:'20~35', con:'80~130',
+        desc:'Нефрографийн фазад кортексээс бага нягт. Кортекс-медулла ялгаа — хэвийн функцын тэмдэг.' },
+      { name:'Цөсний хүүдий', en:'Gallbladder',
+        non:'0~30', con:'0~30',
+        desc:'Хэвийн цөс усны нягттай ойролцоо. Цөсний чулуу >100 HU. Sludge 20–40 HU.' },
+      { name:'Цөс', en:'Bile',
+        non:'-10~20', con:'-10~20',
+        desc:'Цэвэр цөсний нягт. Нягт өсөх нь biliary sludge, hemobilia, хавдрыг сануулна.' },
+      { name:'Аорта (хэвлийн)', en:'Abdominal aorta',
+        non:'35~45', con:'300~400',
+        desc:'AAA (≥3см диаметр), dissection, hematoma. Mural thrombus 30–50 HU. Calcification 200–400+ HU.' },
+      { name:'Хэвлийн өөх', en:'Mesenteric fat',
+        non:'-120~-60', con:'-120~-60',
+        desc:'Үрэвсэл, аппендицит, панкреатитд "fat stranding" (−60 HU орчим болж нягт нэмэгдэнэ).' },
+      { name:'Ходоодны хана', en:'Stomach wall',
+        non:'30~60', con:'60~100',
+        desc:'Хэвийн зузаан 3–5мм. Хорт хавдарт >5мм болж, тэгш бус будагдалт + орчны fat stranding.' },
+    ]
+  },
+  {
+    id:'aartsag', icon:'🦴', label:'Аарцаг',
+    sub:'Аарцгийн эрхтэн, булчин болон бүтцийн нягтын утгууд',
+    rows:[
+      { name:'Давсагны хана', en:'Urinary bladder wall',
+        non:'40~60', con:'60~100',
+        desc:'Дүүрэн үед ≤3мм, хоосон үед 5–8мм. Хавдарт (TCC) зузаарч, тэгш бус contrast нэмэгдэлт.' },
+      { name:'Шээс', en:'Urine',
+        non:'-5~5', con:'150~400',
+        desc:'Non-contrast-д усны нягттай ойролцоо. Contrast-д иодын ялгарлаас >150 HU болно (pyelogram фаз).' },
+      { name:'Умай', en:'Uterus',
+        non:'40~60', con:'80~120',
+        desc:'Нягт нь мөчлөгийн үе шатаас хамаарна. Эндометриальный Ca: хана зузаарч, тэгш бус contrast нэмэгдэлт.' },
+      { name:'Өндгөвч', en:'Ovary',
+        non:'30~50', con:'50~80',
+        desc:'Фолликул шингэнтэй тул нягт бага. Dermoid cyst: өөхний нягт (~−100), teeth >100 HU.' },
+      { name:'Простат', en:'Prostate',
+        non:'40~60', con:'60~90',
+        desc:'CT-д дотоод/гаднах бүс ялгахад хэцүү — MRI давуу. CT-д хэмжээ, нэвчдэс, тунгалгийн зангилааг үнэлдэг.' },
+      { name:'Iliopsoas булчин', en:'Iliopsoas',
+        non:'40~60', con:'60~80',
+        desc:'Абсцесс: нягт буурч (<30 HU), ring-enhanced кольцо. TB, Crohn, хагарсан аппендикс зэрэгт.' },
+      { name:'Шулуун гэдэсний хана', en:'Rectum wall',
+        non:'30~55', con:'55~90',
+        desc:'Rectum Ca-д хана зузаарч, circumferential байдалтай, perirectal fat stranding харагдана.' },
+    ]
+  },
+  {
+    id:'uy-much', icon:'🦷', label:'Үе мөч',
+    sub:'Мөгөөрс, шөрмөс болон үений бүтцийн нягт',
+    rows:[
+      { name:'Гиалин мөгөөрс', en:'Hyaline (articular) cartilage',
+        non:'80~130', con:'80~130',
+        desc:'Үений гадаргуун гөлгөр мөгөөрс. Остеоартрит, гэмтэлд нягт тэгш бус болж нимгэрнэ.' },
+      { name:'Үений шингэн (хэвийн)', en:'Synovial fluid (normal)',
+        non:'0~20', con:'0~20',
+        desc:'Нягт нь CSF-тэй ойролцоо. Пийшинд (гонт, мэнэнгийн) нягт нэмэгдэнэ.' },
+      { name:'Шөрмөс', en:'Tendon',
+        non:'70~130', con:'70~130',
+        desc:'Тасарсан / degenerative шөрмөс нягт буурч, дотор нь шингэн/өөх нягт харагдана.' },
+      { name:'Ligament', en:'Ligament',
+        non:'70~120', con:'70~120',
+        desc:'MRI-тай харьцуулахад CT-д үнэлхэд хэцүү. Calcification, avulsion fracture харагдаж болно.' },
+      { name:'Менискус (өвдөг)', en:'Meniscus',
+        non:'60~100', con:'60~100',
+        desc:'MRI жижиг хугарлыг тодорхой харуулдаг. CT arthrogram хэрэглэж болно.' },
+      { name:'Субхондрал яс', en:'Subchondral bone',
+        non:'400~800', con:'400~800',
+        desc:'Остеоартритад нягт нэмэгдэж (sclerosis), субхондрал кист (бага нягттай хөндий) үүснэ.' },
+      { name:'Үений effusion', en:'Joint effusion',
+        non:'20~50', con:'20~50',
+        desc:'Гэмтэл, үрэвсэлд нягт нэмэгдэнэ. >50 HU бол цустай (hemarthrosis) байж болно.' },
+    ]
+  },
+  {
+    id:'blood', icon:'🩸', label:'Цус',
+    sub:'Цус, тромб болон цус харвалтын нягтын утгууд',
+    rows:[
+      { name:'Урсаж байгаа цус', en:'Flowing blood (intravascular)',
+        non:'30~45', con:'150~350',
+        desc:'Hematocrit-аас хамаарна. Contrast-д иодын улмаас эрс өсдөг.' },
+      { name:'Цочмог цус харвалт (0–72ц)', en:'Acute hemorrhage',
+        non:'50~80', con:'50~80',
+        desc:'Гемоглобин + фибрины нягтаас болж hyperdense. Non-contrast CT-д оношлоход хангалттай.' },
+      { name:'Хагас цочмог цус (3–14 хоног)', en:'Subacute hemorrhage',
+        non:'30~50', con:'30~50',
+        desc:'Цус задарч нягт аажим буурна. "Isodense" болоход CT-д оношлоход хэцүү — MRI тустай.' },
+      { name:'Архаг цус (>2 долоо хоног)', en:'Chronic hemorrhage',
+        non:'20~35', con:'20~35',
+        desc:'Задарсан нягт улам буурна. Эцэст hypodense кист (encephalomalacia) болно.' },
+      { name:'Цочмог тромб', en:'Acute thrombus / clot',
+        non:'50~90', con:'50~90',
+        desc:'Фибрин агшиж нягт өндөр. DVT, PE, portal vein thrombosis-д filling defect хэлбэрт.' },
+      { name:'Архаг тромб', en:'Chronic thrombus',
+        non:'20~40', con:'20~40',
+        desc:'Кальцификацитай болоход нягт дахин нэмэгдэж болно. Mural thrombus >50 HU бол цочмог/кальцижсан.' },
+      { name:'Артерийн фаз (~25–35с)', en:'Arterial phase',
+        non:'40~60', con:'200~400',
+        desc:'Аорт, артери тод. Hypervascular хавдар (HCC, NET, RCC), аортын гэмтэл илрүүлэхэд.' },
+      { name:'Портал венийн фаз (~60–70с)', en:'Portal venous phase',
+        non:'30~45', con:'100~200',
+        desc:'Элэг, дэлүү, нойр булчирхай сайн будагдана. Хэвлийн стандарт фаз. Hypovascular metastasis тод.' },
+      { name:'Аортын задрал — хуурамч хөндий', en:'Aortic dissection — false lumen',
+        non:'20~35', con:'20~60',
+        desc:'Non-contrast-д хоёр хөндийн нягтын ялгаа. Contrast-д үнэн/хуурамч хөндийн ялгаа тод.' },
+    ]
+  },
+];
+
+// ════════════════════════════════════════
+// HU COLOR & SCALE
+// ════════════════════════════════════════
+function parseMid(s) {
+  s = String(s||'').trim();
+  if (s.includes('~')) {
+    const ns = s.replace(/[<>+]/g,'').split('~').map(Number).filter(n=>!isNaN(n));
+    return ns.length ? ns.reduce((a,b)=>a+b,0)/ns.length : 0;
+  }
+  if (s.includes('+')) return Math.max(parseFloat(s)||1000, 800);
+  if (s.startsWith('<')) return (parseFloat(s.slice(1))||0) - 60;
+  return parseFloat(s)||0;
+}
+function huColor(m) {
+  if (m<=-500) return '#0ea5e9';
+  if (m<=-50)  return '#38bdf8';
+  if (m<=15)   return '#64748b';
+  if (m<=45)   return '#10b981';
+  if (m<=80)   return '#f59e0b';
+  if (m<=200)  return '#f97316';
+  if (m<=600)  return '#ef4444';
+  return '#7c3aed';
+}
+function scalePct(m) {
+  return ((Math.max(-1000,Math.min(1200,m))+1000)/2200*100).toFixed(1);
+}
+
+// ════════════════════════════════════════
+// STATE & RENDER
+// ════════════════════════════════════════
+let contrast = false;
+let currentTab = TABS[0].id;
+
+function buildAll() {
+  const nav  = document.getElementById('sidebarNav');
+  const bNav = document.getElementById('bottomNav');
+  const area = document.getElementById('contentArea');
+  nav.innerHTML = ''; bNav.innerHTML = ''; area.innerHTML = '';
+
+  TABS.forEach((tab, i) => {
+    // Sidebar nav
+    const btn = document.createElement('button');
+    btn.className = 'nav-btn' + (i===0?' active':'');
+    btn.dataset.tab = tab.id;
+    btn.onclick = () => activate(tab.id);
+    btn.innerHTML = `<span class="nav-icon">${tab.icon}</span><span>${tab.label}</span><span class="nav-count">${tab.rows.length}</span>`;
+    nav.appendChild(btn);
+
+    // Bottom nav
+    const bb = document.createElement('button');
+    bb.className = 'bnav-btn' + (i===0?' active':'');
+    bb.dataset.tab = tab.id;
+    bb.onclick = () => activate(tab.id);
+    bb.innerHTML = `<span class="bnav-icon">${tab.icon}</span><span class="bnav-label">${tab.label}</span>`;
+    bNav.appendChild(bb);
+
+    // Panel
+    const panel = document.createElement('div');
+    panel.id = 'p-'+tab.id;
+    panel.className = 'tab-panel' + (i===0?' active':'');
+    panel.innerHTML = `
+      <div class="panel-head">
+        <div class="panel-title">${tab.icon}&nbsp;${tab.label}</div>
+        <div class="panel-sub">${tab.sub}</div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead><tr>
+            <th class="th-num">#</th>
+            <th>Нэршил</th>
+            <th class="th-hu">HU утга</th>
+            <th class="th-desc">Тайлбар</th>
+          </tr></thead>
+          <tbody id="tb-${tab.id}"></tbody>
+        </table>
+        <div class="no-results" id="nr-${tab.id}">
+          <div class="nr-icon">🔍</div>Хайлтын үр дүн олдсонгүй
+        </div>
+      </div>`;
+    area.appendChild(panel);
+    fillRows(tab);
+  });
+}
+
+function fillRows(tab) {
+  const tb = document.getElementById('tb-'+tab.id);
+  tb.innerHTML = '';
+  tab.rows.forEach((r,i) => {
+    const hu  = contrast ? r.con : r.non;
+    const mid = parseMid(hu);
+    const col = huColor(mid);
+    const pct = scalePct(mid);
+    const tr  = document.createElement('tr');
+    tr.dataset.search = (r.name+' '+r.en+' '+r.desc).toLowerCase();
+    tr.innerHTML = `
+      <td class="td-num">${i+1}</td>
+      <td><div class="name-main">${r.name}</div><div class="name-sub">${r.en}</div></td>
+      <td class="td-hu">
+        <span class="hu-badge" style="background:${col}">${hu}</span>
+        <div class="hu-scale"><div class="hu-bar" style="width:${pct}%;background:${col}"></div></div>
+      </td>
+      <td class="desc-cell">${r.desc}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function activate(id) {
+  currentTab = id;
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.querySelectorAll(`[data-tab="${id}"]`).forEach(el=>el.classList.add('active'));
+  document.getElementById('contentArea').scrollTop = 0;
+  closeSidebar();
+}
+
+function setContrast(v) {
+  contrast = v;
+  document.getElementById('btnNon').className = 'ct-btn'+(v?'':' on-non');
+  document.getElementById('btnCon').className  = 'ct-btn'+(v?' on-con':'');
+  TABS.forEach(fillRows);
+  runSearch(document.getElementById('searchInput').value);
+}
+
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => runSearch(e.target.value), 120);
+});
+
+function runSearch(q) {
+  q = q.toLowerCase().trim();
+  // If searching, show all panels; else only current
+  TABS.forEach(tab => {
+    const panel = document.getElementById('p-'+tab.id);
+    const tb    = document.getElementById('tb-'+tab.id);
+    const nr    = document.getElementById('nr-'+tab.id);
+    let any = false;
+    tb.querySelectorAll('tr').forEach(tr => {
+      const ok = !q || tr.dataset.search.includes(q);
+      tr.classList.toggle('row-hidden', !ok);
+      if (ok) any = true;
+    });
+    nr.style.display = (q && !any) ? 'block' : 'none';
+    if (q) panel.classList.add('active');
+    else if (tab.id !== currentTab) panel.classList.remove('active');
+  });
+}
+
+// ─── Sidebar mobile toggle ───────────────
+function toggleSidebar() {
+  const s = document.getElementById('sidebar');
+  const o = document.getElementById('overlay');
+  const open = s.classList.toggle('mobile-open');
+  o.classList.toggle('open', open);
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+// ─── Offline badge ───────────────────────
+function updateOnline() {
+  document.getElementById('offlineBadge').style.display = navigator.onLine ? 'none' : 'block';
+}
+window.addEventListener('online',  updateOnline);
+window.addEventListener('offline', updateOnline);
+updateOnline();
+
+// ─── Install prompt ──────────────────────
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const banner = document.getElementById('installBanner');
+  banner.style.display = 'flex';
+  document.getElementById('installBtn').onclick = async () => {
+    banner.style.display = 'none';
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  };
+});
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+
+// ─── Service Worker ──────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+// ─── Init ────────────────────────────────
+buildAll();
+</script>
+</body>
+</html>
